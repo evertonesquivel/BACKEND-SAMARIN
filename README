@@ -1,0 +1,14 @@
+--instalar os pacotes
+npm install express
+npm install pg
+
+
+-- Para que a REST API fique servindo execute:
+node app.js
+
+
+-- Para testar a REST API no browser.
+-- Adicione um get no arquivo de rotas para permitir chamar via browser
+router.get('/', rssItemsController.getAllrssItems);
+
+http://localhost:3000/rssitems
