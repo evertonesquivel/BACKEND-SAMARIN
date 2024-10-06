@@ -1,41 +1,20 @@
 const express = require('express');
-const mysql = require('mysql2');
-const dotenv = require('dotenv');
-const rssItemsRoutes = require('./routes/rssItemsRoutes'); // Importando as rotas
-
-dotenv.config();
-
 const app = express();
+const port = 3000;
+
+// Middleware para permitir o parse de JSON no corpo da requisição
 app.use(express.json());
 
-// Configuração da conexão com o MySQL
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
-
-// Conectando ao banco de dados
-db.connect((err) => {
-  if (err) {
-    console.error('Erro ao conectar ao banco de dados:', err);
-    return;
-  }
-  console.log('Conectado ao banco de dados MySQL');
-});
-
-// Usar as rotas
-app.use(rssItemsRoutes); // Isso remove o prefixo '/api' Usando as rotas que você criou
-
+// Rota principal
 app.get('/', (req, res) => {
-  res.send('API funcionando!');
+  res.send('A API está funcionando');
 });
 
-// Definindo a porta do servidor
-const PORT = process.env.PORT || 3000;
+// Importa as rotas de usuários
+const userRoutes = require('./routes/userRoutes');
+app.use('/users', userRoutes); // A rota '/users' utilizará as rotas definidas no arquivo userRoutes.js
 
-// Iniciando o servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+// Inicia o servidor
+app.listen(port, () => {
+  console.log(`API rodando na porta ${port}`);
 });

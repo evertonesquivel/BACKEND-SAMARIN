@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 
-router.get('/users', userController.getUsers);
+// Rota para listar todos os usuários
+router.get('/', userController.getAllUsers);
 
 module.exports = router;

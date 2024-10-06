@@ -1,11 +1,10 @@
 const express = require('express');
-const router = express.Router(); // Usando o Router do Express
+const router = express.Router();
 
-// Definindo a rota para obter usuários
-router.get('/users', (req, res) => {
-  // Aqui você pode adicionar a lógica para consultar o banco de dados
-  res.send('Aqui estão os usuários'); // Placeholder para a resposta
-});
+// Importa o controlador correto
+const rssItemsController = require('../controllers/rssItemsController');
 
-// Exportando o Router
+// Define a rota POST e garante que o controlador existe
+router.post('/rssItems', rssItemsController.createRssItem); // Supondo que você tenha uma função createRssItem
+
 module.exports = router;
