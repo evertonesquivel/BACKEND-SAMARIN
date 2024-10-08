@@ -1,20 +1,18 @@
 const express = require('express');
 const app = express();
-const port = 3000;
-
-// Middleware para permitir o parse de JSON no corpo da requisição
-app.use(express.json());
-
-// Rota principal
-app.get('/', (req, res) => {
-  res.send('A API está funcionando');
-});
-
-// Importa as rotas de usuários
+const cors = require('cors'); // Importe o pacote cors
 const userRoutes = require('./routes/userRoutes');
-app.use('/users', userRoutes); // A rota '/users' utilizará as rotas definidas no arquivo userRoutes.js
 
-// Inicia o servidor
-app.listen(port, () => {
-  console.log(`API rodando na porta ${port}`);
+//Configure o CORS
+app.use(cors({
+  origin: 'http://localhost:4200', // Permita apenas seu frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
+  credentials: true // Permitir cookies, caso necessário
+}));
+app.use(express.json());
+app.use('/', userRoutes); // Prefixo para as rotas de usuários
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
 });
