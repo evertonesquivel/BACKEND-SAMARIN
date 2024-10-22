@@ -17,4 +17,7 @@ router.get('/users/:id', userController.getUserById);
 // Rota para login
 router.post('/login', authController.login); // Mantendo esta rota para login
 
+// Rota para registrar like ou dislike
+router.post('/like', userController.likeOrDislike);
+
 module.exports = router;
