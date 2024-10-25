@@ -74,3 +74,19 @@ exports.likeOrDislike = async (req, res) => {
       return res.status(500).json({ message: 'Erro ao registrar like ou dislike' });
     }
   };
+  // Função para obter a localização do usuário autenticado
+exports.getUserLocation = async (req, res) => {
+    try {
+        const userId = req.user.id; // Obtém o ID do usuário a partir do token
+        const location = await Location.findOne({ where: { userId: userId } }); // Busca a localização no banco de dados
+
+        if (!location) {
+            return res.status(404).json({ message: 'Localização não encontrada' });
+        }
+
+        res.status(200).json(location); // Retorna a localização encontrada
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Erro ao obter a localização' });
+    }
+};
