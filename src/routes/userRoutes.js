@@ -19,5 +19,5 @@ router.post('/login', authController.login); // Mantendo esta rota para login
 
 // Rota para registrar like ou dislike
 router.post('/like', userController.likeOrDislike);
-
+router.post('/update-location', authenticateToken, authController.updateLocation);
 module.exports = router;

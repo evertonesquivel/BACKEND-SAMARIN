@@ -14,6 +14,8 @@ const userSchema = new mongoose.Schema({
   interest: { type: String, required: true },
   ageRange: { type: String, required: true },
   specificInterests: { type: String, required: true },
+  interest: { type: [String], required: true },
+  locationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Location', required: true },
 });
 
 const User = mongoose.model('User', userSchema);

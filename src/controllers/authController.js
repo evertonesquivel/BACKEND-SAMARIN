@@ -31,6 +31,19 @@ const login = async (req, res) => {
         res.status(500).json({ message: 'Erro ao realizar login', error: error.message });
     }
   };
+  const updateLocation = async (req, res) => {
+    const { userId, latitude, longitude } = req.body;
+    try {
+        const query = 'UPDATE locations SET latitude = ?, longitude = ? WHERE id = ?';
+        await db.query(query, [latitude, longitude, userId]);
+        res.status(200).json({ message: 'Localização atualizada com sucesso' });
+    } catch (error) {
+        console.error('Erro ao atualizar localização:', error);
+        res.status(500).json({ message: 'Erro ao atualizar localização', error: error.message });
+    }
+};
+
 module.exports = {
     login,
+    updateLocation,
 };

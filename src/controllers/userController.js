@@ -26,6 +26,7 @@ exports.getUserById = async (req, res) => {
     }
 };
 
+
 // Recupera o perfil do usuário autenticado
 exports.getUserProfile = async (req, res) => {
     const userId = req.user.id; // O ID do usuário foi adicionado ao req.user pelo middleware
