@@ -5,6 +5,7 @@ const userController = require('../controllers/userController');
 const authController = require('../controllers/authController'); // Importa o authController
 const authenticateToken = require('../middleware/authMiddleware'); // Corrigindo a importação
 
+router.get('/', userController.hello)
 // Rota para obter o perfil do usuário autenticado
 router.get('/profile', authenticateToken, userController.getUserProfile); // Protege a rota de perfil com o middleware
 

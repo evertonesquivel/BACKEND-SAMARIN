@@ -2,6 +2,11 @@
 const db = require('../db/connection');
 const jwt = require('jsonwebtoken');
 
+
+exports.hello =  (req, res) => {
+    res.send('Hello World, API!');
+}
+
 // Recupera todos os usuários
 exports.getAllUsers = async (req, res) => {
     try {
