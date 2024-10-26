@@ -1,7 +1,7 @@
 // src/controllers/userController.js
 const db = require('../db/connection');
 const jwt = require('jsonwebtoken');
-
+const Location = require('../models/Location');
 
 exports.hello =  (req, res) => {
     res.send('Hello World, API!');
@@ -80,18 +80,30 @@ exports.likeOrDislike = async (req, res) => {
     }
   };
   // Função para obter a localização do usuário autenticado
+  // src/controllers/userController.js
+// src/controllers/userController.js
 exports.getUserLocation = async (req, res) => {
     try {
-        const userId = req.user.id; // Obtém o ID do usuário a partir do token
-        const location = await Location.findOne({ where: { userId: userId } }); // Busca a localização no banco de dados
+        const userId = req.body.id; // Obtendo o ID do usuário do corpo da solicitação
 
-        if (!location) {
-            return res.status(404).json({ message: 'Localização não encontrada' });
+        // Certifique-se de que o ID do usuário foi enviado
+        if (!userId) {
+            return res.status(400).json({ message: "User  ID is required." });
         }
 
-        res.status(200).json(location); // Retorna a localização encontrada
+        // Buscando a localização do usuário no banco de dados
+        const location = await Location.findOne({
+            where: { users_id: userId } // Usando o ID do usuário para buscar a localização
+        });
+
+        if (!location) {
+            return res.status(404).json({ message: "Location not found." });
+        }
+
+        // Retornando a localização encontrada
+        res.status(200).json(location);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Erro ao obter a localização' });
+        console.error("Error retrieving location:", error);
+        res.status(500).json({ message: "Error retrieving location." });
     }
 };

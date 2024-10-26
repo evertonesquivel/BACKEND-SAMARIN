@@ -1,49 +1,42 @@
-// src/models/location.js
 const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('../database'); // Supondo que você tenha uma instância do Sequelize configurada
+const sequelize = require('../db/dbSequelize'); 
 
 const Location = sequelize.define('Location', {
+  id: {
+      type: Sequelize.BIGINT,
+      primaryKey: true,
+      autoIncrement: true
+  },
   city: {
-    type: DataTypes.STRING,
-    allowNull: false,
+      type: Sequelize.STRING,
+      allowNull: false
   },
   state: {
-    type: DataTypes.STRING,
-    allowNull: false,
+      type: Sequelize.STRING,
+      allowNull: false
   },
   country: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  Users_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'Users', // Supondo que você tenha uma tabela 'Users'
-      key: 'id',
-    },
+      type: Sequelize.STRING,
+      allowNull: false
   },
   latitude: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
+      type: Sequelize.FLOAT,
+      allowNull: false
   },
   longitude: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
+      type: Sequelize.FLOAT,
+      allowNull: false
   },
-  createdAt: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW,
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW,
-  },
+  users_id: {
+      type: Sequelize.BIGINT,
+      allowNull: false
+  }
 }, {
-  timestamps: false,
-  tableName: 'locations', // Nome da tabela no banco de dados
+  tableName: 'locations',
+  timestamps: true, // Ativa a criação automática das colunas created_at e updated_at
+  createdAt: 'created_at', // Nome da coluna no banco de dados
+  updatedAt: 'updated_at'   // Nome da coluna no banco de dados
 });
 
-module.exports = Location;
+
+module.exports = Location; 

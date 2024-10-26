@@ -7,6 +7,7 @@ const pool = mysql.createPool({
   database: 'samarin_db'
 });
 
+
 module.exports = pool;
 
 

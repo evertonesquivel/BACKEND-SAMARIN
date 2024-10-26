@@ -25,3 +25,19 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
+
+
+
+
+const sequelize = require('./db/dbSequelize'); // Importa o modelo User
+
+async function syncDatabase() {
+    try {
+        await sequelize.sync({ force: false }); // force: true para recriar as tabelas
+        console.log('Banco de dados sincronizado com sucesso!');
+    } catch (error) {
+        console.error('Erro ao sincronizar o banco de dados:', error);
+    }
+}
+
+syncDatabase();

@@ -22,5 +22,6 @@ router.post('/login', authController.login); // Mantendo esta rota para login
 router.post('/like', userController.likeOrDislike);
 router.post('/update-location', authenticateToken, authController.updateLocation);
 router.get('/location', authenticateToken, userController.getUserLocation);
-
+// src/routes/userRoutes.js
+router.post('/location', authenticateToken, userController.getUserLocation);
 module.exports = router;

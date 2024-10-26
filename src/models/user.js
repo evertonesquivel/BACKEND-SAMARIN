@@ -18,5 +18,5 @@ const userSchema = new mongoose.Schema({
   locationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Location', required: true },
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('Users', userSchema);
 module.exports = User;
