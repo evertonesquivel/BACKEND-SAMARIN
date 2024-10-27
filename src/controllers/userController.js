@@ -80,8 +80,7 @@ exports.likeOrDislike = async (req, res) => {
     }
   };
   // Função para obter a localização do usuário autenticado
-  // src/controllers/userController.js
-// src/controllers/userController.js
+ 
 exports.getUserLocation = async (req, res) => {
     try {
         const userId = req.body.id; // Obtendo o ID do usuário do corpo da solicitação
