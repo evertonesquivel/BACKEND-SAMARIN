@@ -91,6 +91,10 @@ const User = sequelize.define('User', {
     type: DataTypes.INTEGER,
     allowNull: true, // Ajuste conforme sua necessidade
   },
+  relationship_types:{
+    type: DataTypes.STRING,
+    allowNull: true,
+  }
 }, {
   tableName: 'users', // Nome da tabela no banco de dados
   timestamps: true, // Habilitar createdAt e updatedAt
