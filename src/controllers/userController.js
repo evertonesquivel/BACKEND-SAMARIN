@@ -1,7 +1,7 @@
 // src/controllers/userController.js
 const db = require('../db/connection');
 const jwt = require('jsonwebtoken');
-const Location = require('../models/Location');
+const Location = require('../models/location');
 
 exports.hello =  (req, res) => {
     res.send('Hello World, API!');
