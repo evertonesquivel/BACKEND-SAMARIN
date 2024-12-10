@@ -1,41 +1,43 @@
 const express = require('express');
-const mysql = require('mysql2');
-const dotenv = require('dotenv');
-const rssItemsRoutes = require('./routes/rssItemsRoutes'); // Importando as rotas
-
-dotenv.config();
-
 const app = express();
+const cors = require('cors'); // Importe o pacote cors
+const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
+const bodyParser = require('body-parser');
+
+
+//Configure o CORS
+app.use(cors({
+  origin: 'http://localhost:4200', // Permita apenas seu frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
+  credentials: true // Permitir cookies, caso necessário
+}));
 app.use(express.json());
+// Middleware para lidar com JSON no corpo da requisição
+app.use(bodyParser.json());
 
-// Configuração da conexão com o MySQL
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
+// Usar as rotas de autenticação
+app.use('/login', authRoutes);
 
-// Conectando ao banco de dados
-db.connect((err) => {
-  if (err) {
-    console.error('Erro ao conectar ao banco de dados:', err);
-    return;
-  }
-  console.log('Conectado ao banco de dados MySQL');
-});
+app.use('/', userRoutes); // Prefixo para as rotas de usuários
 
-// Usar as rotas
-app.use(rssItemsRoutes); // Isso remove o prefixo '/api' Usando as rotas que você criou
-
-app.get('/', (req, res) => {
-  res.send('API funcionando!');
-});
-
-// Definindo a porta do servidor
 const PORT = process.env.PORT || 3000;
-
-// Iniciando o servidor
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
 });
+
+
+
+
+const sequelize = require('./db/dbSequelize'); // Importa o modelo User
+
+async function syncDatabase() {
+    try {
+        await sequelize.sync({ force: false }); // force: true para recriar as tabelas
+        console.log('Banco de dados sincronizado com sucesso!');
+    } catch (error) {
+        console.error('Erro ao sincronizar o banco de dados:', error);
+    }
+}
+
+syncDatabase();
