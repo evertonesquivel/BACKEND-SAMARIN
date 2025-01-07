@@ -70,6 +70,7 @@ const refreshAccessToken = async (req, res) => {
     }
    
 };
+//func de atualizar a localização 
 
   const updateLocation = async (req, res) => {
     const { userId, latitude, longitude } = req.body;

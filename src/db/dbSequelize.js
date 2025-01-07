@@ -2,9 +2,9 @@ const { Sequelize } = require('sequelize');
 
 // Configurações do banco de dados
 const sequelize = new Sequelize('samarin_db', 'root', 'everton427', {
-    host: 'localhost', // ou o endereço do seu servidor MySQL
-    dialect: 'mysql', // Especifique o dialeto
-    logging: console.log, // Para registrar as consultas SQL no console
+    host: 'localhost', 
+    dialect: 'mysql',
+    logging: console.log, 
     define: {
         timestamps: true, // Adiciona createdAt e updatedAt
         underscored: true, // Usa snake_case para os nomes das colunas
@@ -16,6 +16,8 @@ const sequelize = new Sequelize('samarin_db', 'root', 'everton427', {
         idle: 10000 // Tempo máximo em milissegundos que uma conexão pode ficar ociosa antes de ser liberada
     }
 });
+const Match = require('../models/matchs')(sequelize, Sequelize.DataTypes);
+sequelize.models.Match = Match;
 
 // Testar a conexão com o banco de dados
 async function testConnection() {
@@ -26,6 +28,14 @@ async function testConnection() {
         console.error('Erro ao conectar ao banco de dados:', error);
     }
 }
+const User = require('../models/user')(sequelize, Sequelize.DataTypes);
+sequelize.models.User = User;
+
+
+Match.associate = (models) => {
+  Match.belongsTo(models.User, { foreignKey: 'matcher_id', as: 'matcher' });
+  Match.belongsTo(models.User, { foreignKey: 'matchee_id', as: 'matchee' });
+};
 
 testConnection();
 

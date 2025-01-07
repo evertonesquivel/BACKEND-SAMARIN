@@ -3,7 +3,9 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const authController = require('../controllers/authController'); // Importa o authController
+const chatController = require('../controllers/chatController'); // Importa o chatController
 const authenticateToken = require('../middleware/authMiddleware'); // Corrigindo a importação
+const authMiddleware = require('../middleware/authMiddleware'); // Corrigindo a importação
 
 router.get('/', userController.hello)
 // Rota para obter o perfil do usuário autenticado
@@ -30,4 +32,20 @@ router.post('/update-location', authenticateToken, authController.updateLocation
 router.get('/location', authenticateToken, userController.getUserLocation);
 // src/routes/userRoutes.js
 router.post('/location', authenticateToken, userController.getUserLocation);
+
+
+// Rota para criar uma nova sala de chat
+router.post('/create', authMiddleware, chatController.createChatRoom);
+
+// Rota para listar conversas para o usuário autenticado
+router.get('/conversations', authMiddleware, chatController.getConversations);
+
+// Rota para listar mensagens de uma sala de chat específica
+router.get('/messages/:chatRoomId', authMiddleware, chatController.getMessages);
+
+// Rota para enviar uma mensagem
+router.post('/send', authMiddleware, chatController.sendMessage);
+
+// Rota para obter os detalhes dos contatos (matches ou solicitações)
+router.get('/contacts', authMiddleware, chatController.getContactsDetails);
 module.exports = router;
