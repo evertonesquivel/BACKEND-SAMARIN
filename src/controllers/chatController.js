@@ -3,27 +3,43 @@ const jwt = require('jsonwebtoken');
 const Match = require('../models/matchs');
 sequelize.Match = Match;
 const User = require('../models/user');
+
 const secretKey = process.env.JWT_SECRET || 'seuSegredo'; // Utilize a variável de ambiente para maior segurança
 
 // Função auxiliar para inserir mensagem no banco de dados
 async function insertMessage(content, chatRoomId, senderId, receiverId) {
-    const sentAt = new Date();
-    const [result] = await sequelize.query(`
-        INSERT INTO messages (content, is_read, sentAt, chat_room_id, sender_id, receiver_id)
-        VALUES (?, 0, ?, ?, ?, ?)
-    `, [JSON.stringify(content), sentAt, chatRoomId, senderId, receiverId]);
-
-    return {
+    const sentAt = new Date().toISOString().slice(0, 19).replace('T', ' '); // Formata a data para o MySQL
+    try {
+      const [result] = await sequelize.query(
+        `INSERT INTO messages (content, is_read, sentAt, chat_room_id, sender_id, receiver_id, is_deleted)
+         VALUES (:content, 0, :sentAt, :chatRoomId, :senderId, :receiverId, 0)`,
+        {
+          replacements: {
+            content: JSON.stringify(content), // Converte o conteúdo para JSON
+            sentAt,
+            chatRoomId: parseInt(chatRoomId, 10), // Converte para número
+            senderId: parseInt(senderId, 10), // Converte para número
+            receiverId: parseInt(receiverId, 10), // Converte para número
+          },
+          type: sequelize.QueryTypes.INSERT,
+        }
+      );
+  
+      return {
         id: result.insertId,
         content,
         is_read: 0,
         sentAt,
         chatRoomId,
         senderId,
-        receiverId
-    };
-}
-
+        receiverId,
+        is_deleted: 0,
+      };
+    } catch (error) {
+      console.error('Erro ao inserir mensagem:', error);
+      throw error; // Lança o erro para ser tratado no método que chamou
+    }
+  }
 // Inicializar WebSocket no controlador
 exports.initializeWebSocket = (io) => {
     io.on('connection', async (socket) => {
@@ -113,7 +129,8 @@ const getContacts = async (userId) => {
         SELECT DISTINCT
           u.id, 
           u.name, 
-          u.email 
+          u.email,
+          u.images 
         FROM 
           users u
         INNER JOIN 
@@ -163,31 +180,62 @@ function verifyToken(token) {
 
 // Listar conversas para o usuário autenticado
 exports.getConversations = async (req, res) => {
-    const userId = req.user.id;
+    const userId = req.user.id; // ID do usuário autenticado
+
     try {
-        const [conversations] = await sequelize.query(`
-            SELECT cr.*, m.content AS last_message, m.sentAt AS last_sent_at
-            FROM chat_rooms cr
-            LEFT JOIN messages m ON m.chat_room_id = cr.id
-            WHERE cr.id IN (
-                SELECT chat_room_id FROM chat_participants WHERE user_id = ?
-            )
-            ORDER BY last_sent_at DESC
-        `, [userId]);
-        res.json(conversations);
+        // Busca todas as salas de chat em que o usuário participa
+        const [conversations] = await sequelize.query(
+            `SELECT 
+                cr.id AS chat_room_id,
+                cr.status,
+                cr.chat_type,
+                cr.title,
+                cr.image_url,
+                m.content AS last_message,
+                m.sentAt AS last_message_sent_at,
+                m.sender_id AS last_message_sender_id
+             FROM chat_rooms cr
+             INNER JOIN chat_participants cp ON cr.id = cp.chat_room_id
+             LEFT JOIN messages m ON cr.last_message_id = m.id
+             WHERE cp.user_id = :userId
+             ORDER BY m.sentAt DESC`,
+            {
+                replacements: { userId },
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Retorna a lista de conversas
+        res.status(200).json(conversations);
     } catch (error) {
-        console.error('Erro ao listar conversas:', error);
-        res.status(500).json({ error: 'Falha ao listar conversas.' });
+        console.error('Erro ao buscar conversas:', error);
+        res.status(500).json({ error: 'Falha ao buscar conversas.' });
     }
 };
-
 // Listar mensagens de uma sala de chat específica
 exports.getMessages = async (req, res) => {
     const { chatRoomId } = req.params;
+
+    // Verificação para garantir que o chatRoomId foi passado e é um número válido
+    if (!chatRoomId || isNaN(chatRoomId)) {
+        return res.status(400).json({ error: 'chatRoomId is required and must be a number.' });
+    }
+
     try {
-        const [messages] = await sequelize.query(`
-            SELECT * FROM messages WHERE chat_room_id = ? ORDER BY sentAt DESC
-        `, [chatRoomId]);
+        // Realizando a consulta com a substituição do parâmetro chatRoomId
+        const messages = await sequelize.query(
+            `SELECT * FROM messages WHERE chat_room_id = :chatRoomId ORDER BY sentAt DESC`,
+            {
+                replacements: { chatRoomId }, // Passando o parâmetro corretamente
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Verificando quantas mensagens foram retornadas e logando para depuração
+        console.log('Número de mensagens retornadas:', messages.length);
+        console.log('Mensagens carregadas:', messages);
+
+        // Respondendo com as mensagens
         res.json(messages);
     } catch (error) {
         console.error('Erro ao buscar mensagens:', error);
@@ -197,17 +245,25 @@ exports.getMessages = async (req, res) => {
 
 // Enviar mensagem em tempo real para a sala de chat
 exports.sendMessage = async (req, res) => {
-    const { content, chatRoomId, receiverId } = req.body;
-    const userId = req.user.id;
-
-    try {
-        const message = await insertMessage(content, chatRoomId, userId, receiverId);
-
-        io.to(chatRoomId).emit('newMessage', message);
-
-        return res.status(201).json(message);
-    } catch (error) {
-        console.error('Erro ao enviar mensagem:', error);
-        res.status(500).json({ error: 'Falha ao enviar mensagem.' });
+    const { content, chatRoomId, receiverId } = req.body; // Extrai receiverId do corpo da requisição
+    const userId = req.user.id; // ID do usuário autenticado
+  
+    // Verifica se todos os campos obrigatórios estão presentes
+    if (!content || !chatRoomId || !receiverId) {
+      return res.status(400).json({ error: 'Campos obrigatórios faltando: content, chatRoomId ou receiverId.' });
     }
-};
+  
+    try {
+      const message = await insertMessage(content, chatRoomId, userId, receiverId);
+  
+      // Emite a mensagem para a sala de chat via WebSocket (se aplicável)
+      if (io) {
+        io.to(chatRoomId).emit('newMessage', message);
+      }
+  
+      return res.status(201).json(message);
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      return res.status(500).json({ error: 'Falha ao enviar mensagem.' });
+    }
+  };
