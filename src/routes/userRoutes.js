@@ -48,4 +48,8 @@ router.post('/send', authMiddleware, chatController.sendMessage);
 
 // Rota para obter os detalhes dos contatos (matches ou solicitações)
 router.get('/contacts', authMiddleware, chatController.getContactsDetails);
+// src/routes/userRoutes.js
+
+// Rota para atualizar o perfil do usuário
+router.put('/profile', authenticateToken, userController.updateUserProfile);
 module.exports = router;

@@ -106,3 +106,57 @@ exports.getUserLocation = async (req, res) => {
         res.status(500).json({ message: "Error retrieving location." });
     }
 };
+// Função para atualizar o perfil do usuário
+// src/controllers/userController.js
+
+exports.updateUserProfile = async (req, res) => {
+    const userId = req.user.id; // Obtém o ID do usuário autenticado
+    const updatedData = req.body; // Dados atualizados enviados pelo frontend
+
+    try {
+        // Verifica se o usuário existe
+        const [user] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+        if (user.length === 0) {
+            return res.status(404).json({ error: 'Usuário não encontrado.' });
+        }
+
+        // Campos permitidos para atualização
+        const allowedFields = [
+            'name', 'surname', 'bio', 'sexual_orientation', 'gender_identity',
+            'interest', 'profession', 'pronouns', 'min_age_interest', 'max_age_interest',
+            'personality', 'hobbies', 'specific_interests', 'relationship_types'
+        ];
+
+        // Prepara a query de atualização
+        const updateQuery = [];
+        const updateValues = [];
+
+        for (const field of allowedFields) {
+            if (updatedData[field] !== undefined) {
+                // Se o campo for um array (como hobbies ou interest), converte para JSON
+                if (Array.isArray(updatedData[field])) {
+                    updateQuery.push(`${field} = ?`);
+                    updateValues.push(JSON.stringify(updatedData[field]));
+                } else {
+                    updateQuery.push(`${field} = ?`);
+                    updateValues.push(updatedData[field]);
+                }
+            }
+        }
+
+        if (updateQuery.length === 0) {
+            return res.status(400).json({ error: 'Nenhum dado válido para atualização.' });
+        }
+
+        updateValues.push(userId); // Adiciona o ID do usuário ao final dos valores
+
+        // Monta a query SQL
+        const query = `UPDATE users SET ${updateQuery.join(', ')} WHERE id = ?`;
+        await db.query(query, updateValues);
+
+        return res.json({ message: 'Perfil atualizado com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao atualizar perfil:', error);
+        return res.status(500).json({ error: 'Erro ao atualizar o perfil.' });
+    }
+};
