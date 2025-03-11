@@ -160,3 +160,106 @@ exports.updateUserProfile = async (req, res) => {
         return res.status(500).json({ error: 'Erro ao atualizar o perfil.' });
     }
 };
+// Função para calcular a distância entre dois pontos geográficos usando a fórmula de Haversine
+function haversineDistance(lat1, lon1, lat2, lon2) {
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371; // Raio da Terra em km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distância em km
+}
+
+// Função para recomendar usuários
+exports.recommendUsers = async (req, res) => {
+    const userId = req.user.id; // ID do usuário logado
+
+    try {
+        // Recupera a localização do usuário logado
+        const [userLocation] = await db.query('SELECT latitude, longitude FROM locations WHERE users_id = ?', [userId]);
+        if (!userLocation.length) {
+            return res.status(404).json({ error: 'Localização do usuário não encontrada.' });
+        }
+        const { latitude: userLat, longitude: userLon } = userLocation[0];
+
+        // Recupera a distância de filtragem do usuário logado
+        const [user] = await db.query('SELECT filter_distance FROM users WHERE id = ?', [userId]);
+        const maxDistance = user[0].filter_distance || 50; // Usa 50 km como valor padrão se não houver distância definida
+
+        // Recupera os IDs dos usuários que já tiveram match ou dislike
+        const [excludedUsers] = await db.query(
+            'SELECT liked_user_id FROM user_likes WHERE user_id = ? UNION SELECT user_id FROM user_likes WHERE liked_user_id = ? AND is_like = FALSE',
+            [userId, userId]
+        );
+        const excludedUserIds = excludedUsers.map(user => user.liked_user_id);
+        console.log('IDs excluídos:', excludedUserIds);
+
+        // Filtra os usuários com base nas características e exclui o próprio usuário e os já interagidos
+        const [users] = await db.query(`
+            SELECT 
+                u.id, 
+                u.name, 
+                u.surname, 
+                u.birth_date, 
+                u.user_tag, 
+                u.bio, 
+                u.email, 
+                u.interest, 
+                u.sexual_orientation, 
+                u.createdAt, 
+                u.updatedAt, 
+                u.gender_identity, 
+                u.images, 
+                u.phone, 
+                u.profession, 
+                u.pronouns, 
+                u.min_age_interest, 
+                u.max_age_interest, 
+                u.personality, 
+                u.hobbies, 
+                u.specific_interests, 
+                u.relationship_types, 
+                l.latitude, 
+                l.longitude
+            FROM users u
+            JOIN locations l ON u.id = l.users_id
+            WHERE u.id != ?
+            AND u.id NOT IN (?)
+        `, [userId, excludedUserIds.length ? excludedUserIds : [0]]); // Evita SQL inválido se excludedUserIds estiver vazio
+        console.log('Total de usuários encontrados:', users.length);
+
+        // Calcula a distância para cada usuário e filtra pela distância máxima
+        const usersWithDistance = users
+            .map(user => {
+                const distance = haversineDistance(userLat, userLon, user.latitude, user.longitude);
+                return { ...user, distance };
+            })
+            .filter(user => user.distance <= maxDistance) // Filtra pela distância máxima
+            .sort((a, b) => a.distance - b.distance); // Ordena por proximidade
+
+        return res.json(usersWithDistance);
+    } catch (error) {
+        console.error('Erro ao recomendar usuários:', error);
+        return res.status(500).json({ error: 'Erro ao recomendar usuários.' });
+    }
+};
+exports.updateFilterDistance = async (req, res) => {
+    const userId = req.user.id; // ID do usuário logado
+    const { filterDistance } = req.body; // Nova distância de filtragem
+  
+    try {
+      // Atualiza a distância de filtragem na tabela `users`
+      await db.query(
+        'UPDATE users SET filter_distance = ? WHERE id = ?',
+        [filterDistance, userId]
+      );
+  
+      return res.json({ message: 'Distância de filtragem atualizada com sucesso.' });
+    } catch (error) {
+      console.error('Erro ao atualizar distância de filtragem:', error);
+      return res.status(500).json({ error: 'Erro ao atualizar distância de filtragem.' });
+    }
+  };

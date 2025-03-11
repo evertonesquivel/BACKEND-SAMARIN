@@ -52,4 +52,8 @@ router.get('/contacts', authMiddleware, chatController.getContactsDetails);
 
 // Rota para atualizar o perfil do usuário
 router.put('/profile', authenticateToken, userController.updateUserProfile);
+
+router.get('/recommendations', authenticateToken, userController.recommendUsers);
+// src/routes/userRoutes.js
+router.post('/update-filter-distance', authenticateToken, userController.updateFilterDistance);
 module.exports = router;
