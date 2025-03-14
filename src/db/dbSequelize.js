@@ -1,7 +1,7 @@
 const { Sequelize } = require('sequelize');
 
 // Configurações do banco de dados
-const sequelize = new Sequelize('samarin_db', 'root', 'everton427', {
+const sequelize = new Sequelize('samarin_db', 'root', '', {
     host: 'localhost', 
     dialect: 'mysql',
     logging: console.log, 
