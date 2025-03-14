@@ -79,6 +79,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true
     },
+    filter_distance: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     personality: {
       type: DataTypes.STRING,
       allowNull: true

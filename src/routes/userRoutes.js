@@ -1,6 +1,8 @@
 // src/routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
+const upload = require('../config/multerConfig');
+const userImages = require('../controllers/userImagesController');
 const userController = require('../controllers/userController');
 const authController = require('../controllers/authController'); // Importa o authController
 const chatController = require('../controllers/chatController'); // Importa o chatController
@@ -56,4 +58,20 @@ router.put('/profile', authenticateToken, userController.updateUserProfile);
 router.get('/recommendations', authenticateToken, userController.recommendUsers);
 // src/routes/userRoutes.js
 router.post('/update-filter-distance', authenticateToken, userController.updateFilterDistance);
+
+
+// Rota para upload de uma ou múltiplas imagens
+router.post('/upload-images', upload.array('images'), userImages.uploadImages);
+
+// Rota para buscar imagens de um usuário
+router.get('/user-images/:userId', userImages.getUserImages);
+router.post('/upload-profile-image', upload.single('image'), userImages.uploadProfileImage);
+
+// Rota para buscar as imagens do usuário
+router.get('/user-images/:userId', userImages.getUserImages);
+// Rota para excluir uma imagem
+router.delete('/delete-image/:imageId', userImages.deleteImage);
+
+// Rota para registrar um novo usuário
+router.post('/register', userController.registerUser);
 module.exports = router;

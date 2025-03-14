@@ -13,8 +13,9 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
-app.use(bodyParser.json());
+// Aumentar o limite de tamanho do payload para 50 MB (ou o tamanho que você precisar)
+app.use(bodyParser.json({ limit: '50mb' })); // Configuração para JSON
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // Configuração para URL-encoded
 
 // Usar as rotas de autenticação
 const userRoutes = require('./routes/userRoutes');

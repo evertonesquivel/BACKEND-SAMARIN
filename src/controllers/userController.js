@@ -2,6 +2,7 @@
 const db = require('../db/connection');
 const jwt = require('jsonwebtoken');
 const Location = require('../models/location');
+const bcrypt = require('bcrypt');
 
 exports.hello =  (req, res) => {
     res.send('Hello World, API!');
@@ -133,11 +134,21 @@ exports.updateUserProfile = async (req, res) => {
 
         for (const field of allowedFields) {
             if (updatedData[field] !== undefined) {
-                // Se o campo for um array (como hobbies ou interest), converte para JSON
-                if (Array.isArray(updatedData[field])) {
-                    updateQuery.push(`${field} = ?`);
-                    updateValues.push(JSON.stringify(updatedData[field]));
+                // Trata campos que devem ser armazenados como JSON
+                if (field === 'interest' || field === 'hobbies') {
+                    // Converte strings separadas por vírgulas em arrays JSON
+                    if (typeof updatedData[field] === 'string') {
+                        updatedData[field] = updatedData[field].split(',').map(item => item.trim());
+                    }
+                    // Garante que o valor seja um array antes de converter para JSON
+                    if (Array.isArray(updatedData[field])) {
+                        updateQuery.push(`${field} = ?`);
+                        updateValues.push(JSON.stringify(updatedData[field]));
+                    } else {
+                        console.warn(`Campo ${field} não é um array válido. Ignorando.`);
+                    }
                 } else {
+                    // Campos normais (não JSON)
                     updateQuery.push(`${field} = ?`);
                     updateValues.push(updatedData[field]);
                 }
@@ -261,5 +272,93 @@ exports.updateFilterDistance = async (req, res) => {
     } catch (error) {
       console.error('Erro ao atualizar distância de filtragem:', error);
       return res.status(500).json({ error: 'Erro ao atualizar distância de filtragem.' });
+    }
+  };
+
+  exports.registerUser = async (req, res) => {
+    const { userData, locationData, imagesData } = req.body;
+  
+    console.log('Dados recebidos:', req.body); // Depuração
+  
+    try {
+      // Verifica se o e-mail já está cadastrado
+      const [existingUser] = await db.query('SELECT * FROM users WHERE email = ?', [userData.email]);
+      if (existingUser.length > 0) {
+        return res.status(400).json({ error: 'E-mail já cadastrado.' });
+      }
+  
+      // Define a data e hora atuais para o campo createdAt
+      const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  
+      // Insere os dados na tabela `users`
+      const [userResult] = await db.query(
+        `INSERT INTO users (
+          name, surname, birth_date, user_tag, email, password, phone, profession,
+          gender_identity, sexual_orientation, pronouns, min_age_interest, max_age_interest,
+          personality, hobbies, specific_interests, relationship_types, interest, createdAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userData.name,
+          userData.surname,
+          userData.birth_date,
+          userData.user_tag,
+          userData.email,
+          userData.password,
+          userData.phone,
+          userData.profession,
+          userData.gender_identity,
+          userData.sexual_orientation,
+          userData.pronouns,
+          userData.min_age_interest,
+          userData.max_age_interest,
+          userData.personality,
+          userData.hobbies,
+          userData.specific_interests,
+          userData.relationship_types,
+          userData.interest || '[]', // Define um valor padrão para o campo interest
+          createdAt // Inclui o campo createdAt
+        ]
+      );
+  
+      const userId = userResult.insertId; // Obtém o ID do usuário inserido
+  
+      // Insere os dados na tabela `locations`
+      await db.query(
+        `INSERT INTO locations (city, state, latitude, longitude, users_id)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          locationData.city,
+          locationData.state,
+          locationData.latitude,
+          locationData.longitude,
+          locationData.country || 'Brasil',
+          userId
+        ]
+      );
+  
+      // Insere a imagem de perfil na tabela `user_images`
+      if (imagesData.profileImage) {
+        await db.query(
+          `INSERT INTO user_images (user_id, image, is_profile)
+           VALUES (?, ?, 1)`,
+          [userId, imagesData.profileImage]
+        );
+      }
+  
+      // Insere as imagens da galeria na tabela `user_images`
+      if (imagesData.galleryImages && imagesData.galleryImages.length > 0) {
+        for (const image of imagesData.galleryImages) {
+          await db.query(
+            `INSERT INTO user_images (user_id, image, is_profile)
+             VALUES (?, ?, 0)`,
+            [userId, image]
+          );
+        }
+      }
+  
+      return res.status(201).json({ message: 'Usuário registrado com sucesso!', userId });
+    } catch (error) {
+      console.error('Erro ao registrar usuário:', error);
+      return res.status(500).json({ error: 'Erro ao registrar usuário.' });
     }
   };
