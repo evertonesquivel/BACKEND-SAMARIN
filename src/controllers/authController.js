@@ -1,7 +1,7 @@
 // src/controllers/authController.js
 const db = require('../db/connection'); // Certifique-se de que está importando sua conexão com o banco de dados
 const jwt = require('jsonwebtoken');
-const secretKey = ''; // A mesma chave que você usou para assinar o token
+const secretKey = process.env.JWT_SECRET || 'seuSegredo'; // Utilize a variável de ambiente para maior segurança
 
 
 const login = async (req, res) => {
