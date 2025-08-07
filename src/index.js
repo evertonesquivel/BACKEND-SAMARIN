@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const socketIo = require('socket.io'); // Importar o socket.io
 const sequelize = require('./db/dbSequelize'); // Instância do Sequelize
+
 const app = express();
 
 // Configure o CORS
@@ -20,8 +21,14 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // Configura�
 // Usar as rotas de autenticação
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
-app.use('/login', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/', userRoutes); // Prefixo para as rotas de usuários
+
+const chatRoutes = require('./routes/chatRoutes');
+app.use('/chat', chatRoutes);
+
+const userImageRoutes = require('./routes/userImagesRoutes.js');
+app.use('/images', userImageRoutes); 
 
 // Criar o servidor HTTP
 const server = http.createServer(app);
